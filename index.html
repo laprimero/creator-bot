@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Creator Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#0b0710; --bg-2:#1a0f2e; --bg-3:#241640;
+    --glass:rgba(255,255,255,0.05); --glass-line:rgba(255,255,255,0.12);
+    --pink:#ff5da2; --purple:#9d6bff; --gold:#ffcf6b; --cyan:#5ce1e6;
+    --ink:#f5f1ff; --ink-soft:#a89bcf; --danger:#ff6b6b;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; width:100%; height:100%; overscroll-behavior:none; }
+  body{
+    font-family:'Inter',sans-serif; color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 0%, var(--bg-3), transparent 55%),
+      radial-gradient(circle at 100% 100%, #2a1a3f, transparent 50%),
+      var(--bg-1);
+    min-height:100dvh; overflow-x:hidden;
+  }
+  .display{ font-family:'Poppins',sans-serif; }
+  #app{ max-width:460px; margin:0 auto; min-height:100dvh; padding:20px 18px 90px; position:relative; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .brand{ font-family:'Poppins',sans-serif; font-weight:800; font-size:19px; }
+  .brand span{ background:linear-gradient(90deg,var(--pink),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:12px; border:1px solid var(--glass-line);
+    background:var(--glass); display:flex; align-items:center; justify-content:center;
+    font-size:16px; cursor:pointer; color:var(--ink-soft);
+  }
+  .icon-btn:active{ transform:scale(0.93); }
+  .tagline{ color:var(--ink-soft); font-size:13px; font-weight:500; margin:2px 0 20px; }
+
+  /* tab nav */
+  .tabs{
+    display:flex; gap:6px; background:var(--glass); border:1px solid var(--glass-line);
+    border-radius:16px; padding:5px; margin-bottom:20px; overflow-x:auto;
+  }
+  .tab{
+    flex:1; text-align:center; padding:10px 6px; border-radius:12px;
+    font-size:12px; font-weight:700; color:var(--ink-soft); cursor:pointer;
+    white-space:nowrap; transition:all 0.15s ease;
+  }
+  .tab.active{ background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff; }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; animation:fadeIn 0.3s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .card{
+    background:var(--glass); border:1px solid var(--glass-line); border-radius:20px;
+    padding:20px; margin-bottom:16px;
+  }
+  h2.panel-title{ font-size:17px; font-weight:800; margin:0 0 4px; }
+  p.panel-sub{ font-size:13px; color:var(--ink-soft); margin:0 0 16px; line-height:1.5; }
+
+  label.field-label{ display:block; font-size:12px; font-weight:700; color:var(--ink-soft); margin:0 0 6px; }
+  select, textarea, input[type="text"], input[type="date"], input[type="time"]{
+    width:100%; background:rgba(255,255,255,0.04); border:1.5px solid var(--glass-line);
+    border-radius:14px; padding:12px 14px; color:var(--ink); font-family:'Inter',sans-serif;
+    font-size:14px; font-weight:600; margin-bottom:14px; resize:vertical;
+  }
+  select option{ background:#1a0f2e; }
+  textarea{ min-height:80px; }
+  select:focus, textarea:focus, input:focus{ outline:none; border-color:var(--pink); }
+
+  .btn{
+    border:none; border-radius:16px; font-weight:800; font-size:15px;
+    padding:14px 20px; cursor:pointer; width:100%; transition:transform 0.15s ease, opacity 0.2s ease;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-primary{ background:linear-gradient(135deg,var(--pink),var(--purple)); color:#fff; box-shadow:0 8px 20px rgba(157,107,255,0.35); }
+  .btn-ghost{ background:var(--glass); color:var(--ink); border:1px solid var(--glass-line); }
+  .btn-danger{ background:rgba(255,107,107,0.12); border:1px solid rgba(255,107,107,0.3); color:var(--danger); }
+
+  .result-box{
+    background:rgba(0,0,0,0.25); border:1px solid var(--glass-line); border-radius:16px;
+    padding:16px; margin-top:14px; font-size:14px; line-height:1.6; white-space:pre-wrap;
+    display:none;
+  }
+  .result-box.show{ display:block; }
+  .result-actions{ display:flex; gap:10px; margin-top:12px; }
+  .result-actions .btn{ font-size:13px; padding:10px; }
+
+  .spinner{
+    width:34px; height:34px; border-radius:50%; border:3px solid var(--glass-line);
+    border-top-color:var(--pink); animation:spin 0.8s linear infinite; margin:16px auto; display:none;
+  }
+  .spinner.show{ display:block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  /* planner list */
+  .plan-item{
+    background:rgba(255,255,255,0.04); border:1px solid var(--glass-line); border-radius:14px;
+    padding:14px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px;
+  }
+  .plan-item .info{ flex:1; }
+  .plan-item .title{ font-weight:700; font-size:14px; margin-bottom:4px; }
+  .plan-item .when{ font-size:12px; color:var(--gold); font-weight:700; }
+  .plan-item .platform{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .plan-item .del{ background:none; border:none; color:var(--danger); font-size:18px; cursor:pointer; padding:2px 6px; }
+  .empty-state{ font-size:13px; color:var(--ink-soft); text-align:center; padding:20px 10px; border:1px dashed var(--glass-line); border-radius:14px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px);
+    background:#fff; color:#1a0f2e; font-weight:700; font-size:13px;
+    padding:11px 20px; border-radius:26px; box-shadow:0 12px 26px rgba(0,0,0,0.4);
+    opacity:0; pointer-events:none; transition:opacity 0.25s ease, transform 0.25s ease; z-index:50; white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .settings-panel{
+    position:fixed; inset:0; background:var(--bg-1); transform:translateY(100%);
+    transition:transform 0.3s cubic-bezier(.2,.9,.25,1); z-index:40; overflow-y:auto; padding:22px 20px 40px;
+  }
+  .settings-panel.open{ transform:translateY(0); }
+  .settings-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand">Creator <span>Bot</span></div>
+    <button class="icon-btn" id="settingsOpenBtn">⚙</button>
+  </div>
+  <div class="tagline">Ideas, captions, edits &amp; a posting plan — all in one place</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="ideas">Ideas</div>
+    <div class="tab" data-tab="captions">Captions</div>
+    <div class="tab" data-tab="editing">Editing</div>
+    <div class="tab" data-tab="planner">Planner</div>
+  </div>
+
+  <!-- IDEAS -->
+  <div class="panel active" id="panel-ideas">
+    <div class="card">
+      <h2 class="panel-title">Video idea generator</h2>
+      <p class="panel-sub">Tell it your niche and get a list of specific, hook-driven video concepts.</p>
+      <label class="field-label">Niche / topic</label>
+      <textarea id="ideasInput" placeholder="e.g. eFootball gameplay highlights, best formations, skill move tutorials"></textarea>
+      <button class="btn btn-primary" id="ideasGoBtn">Generate ideas</button>
+      <div class="spinner" id="ideasSpinner"></div>
+      <div class="result-box" id="ideasResult"></div>
+      <div class="result-actions" id="ideasActions" style="display:none;">
+        <button class="btn btn-ghost" id="ideasCopyBtn">Copy</button>
+        <button class="btn btn-ghost" id="ideasRegenBtn">Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAPTIONS -->
+  <div class="panel" id="panel-captions">
+    <div class="card">
+      <h2 class="panel-title">Captions &amp; hashtags</h2>
+      <p class="panel-sub">Describe the clip, pick a platform, get caption options and hashtags.</p>
+      <label class="field-label">Platform</label>
+      <select id="captionsPlatform">
+        <option value="TikTok">TikTok</option>
+        <option value="Instagram Reels">Instagram Reels</option>
+        <option value="YouTube Shorts">YouTube Shorts</option>
+      </select>
+      <label class="field-label">What's the video about?</label>
+      <textarea id="captionsInput" placeholder="e.g. clutch last-minute winner in a rivalry match on eFootball"></textarea>
+      <button class="btn btn-primary" id="captionsGoBtn">Generate captions</button>
+      <div class="spinner" id="captionsSpinner"></div>
+      <div class="result-box" id="captionsResult"></div>
+      <div class="result-actions" id="captionsActions" style="display:none;">
+        <button class="btn btn-ghost" id="captionsCopyBtn">Copy</button>
+        <button class="btn btn-ghost" id="captionsRegenBtn">Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITING -->
+  <div class="panel" id="panel-editing">
+    <div class="card">
+      <h2 class="panel-title">Editing coach</h2>
+      <p class="panel-sub">Upload your clip and the AI actually watches it, or just describe it in words. Either way it gives you a step-by-step plan — cuts, pacing, music, text, thumbnail — that you apply yourself in your editing app. It doesn't touch or export the video file.</p>
+
+      <label class="field-label">Platform</label>
+      <select id="editPlatform">
+        <option value="TikTok">TikTok</option>
+        <option value="Instagram Reels">Instagram Reels</option>
+        <option value="YouTube Shorts">YouTube Shorts</option>
+      </select>
+
+      <label class="field-label">Mood / style you want (optional)</label>
+      <input type="text" id="editMood" placeholder="e.g. hype and fast-paced, or clean and cinematic">
+
+      <label class="field-label">Upload your clip (recommended — under ~45 sec, compressed)</label>
+      <input type="file" id="editVideoFile" accept="video/*" style="margin-bottom:10px; width:100%; color:var(--ink-soft); font-size:12.5px;">
+      <div id="editVideoInfo" style="font-size:12px; color:var(--gold); margin-bottom:14px; display:none;"></div>
+
+      <label class="field-label">Or just describe it in words</label>
+      <textarea id="editInput" placeholder="e.g. 45-second clip, the highlight is a bicycle-kick goal at second 30, rest is build-up play"></textarea>
+
+      <button class="btn btn-primary" id="editGoBtn">Get editing plan</button>
+      <div class="spinner" id="editSpinner"></div>
+      <div class="result-box" id="editResult"></div>
+      <div class="result-actions" id="editActions" style="display:none;">
+        <button class="btn btn-ghost" id="editCopyBtn">Copy</button>
+        <button class="btn btn-ghost" id="editRegenBtn">Regenerate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLANNER -->
+  <div class="panel" id="panel-planner">
+    <div class="card">
+      <h2 class="panel-title">Posting planner</h2>
+      <p class="panel-sub">A simple schedule for what to post and when. Saved on this device.</p>
+      <label class="field-label">Video title / idea</label>
+      <input type="text" id="planTitle" placeholder="e.g. Top 5 eFootball skill moves">
+      <label class="field-label">Platform</label>
+      <select id="planPlatform">
+        <option value="TikTok">TikTok</option>
+        <option value="Instagram Reels">Instagram Reels</option>
+        <option value="YouTube Shorts">YouTube Shorts</option>
+      </select>
+      <label class="field-label">Date</label>
+      <input type="date" id="planDate">
+      <label class="field-label">Time</label>
+      <input type="time" id="planTime">
+      <button class="btn btn-primary" id="planAddBtn">Add to planner</button>
+    </div>
+
+    <div id="planList"></div>
+  </div>
+
+</div>
+
+<!-- SETTINGS -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-header">
+    <h2 class="display" style="margin:0; font-size:18px;">Settings</h2>
+    <button class="icon-btn" id="settingsCloseBtn">✕</button>
+  </div>
+  <div class="card">
+    <label class="field-label">Backend URL</label>
+    <input type="text" id="cfgBackend" placeholder="https://your-backend.onrender.com">
+    <p style="font-size:11.5px; color:var(--ink-soft); margin-top:-6px;">
+      Reuses the same backend you already deployed for LaPrimero — just point it at the same URL, no new API key needed.
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG / STORAGE
+   ============================================================ */
+const STORAGE_KEY = "creatorBotState_v1";
+function loadState(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return { backendUrl: "", plans: [] };
+}
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+let state = loadState();
+
+const toast = document.getElementById("toast");
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove("show"), 1800);
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("panel-" + tab.dataset.tab).classList.add("active");
+  });
+});
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+const settingsPanel = document.getElementById("settingsPanel");
+const cfgBackend = document.getElementById("cfgBackend");
+document.getElementById("settingsOpenBtn").addEventListener("click", () => {
+  cfgBackend.value = state.backendUrl;
+  settingsPanel.classList.add("open");
+});
+document.getElementById("settingsCloseBtn").addEventListener("click", () => {
+  state.backendUrl = cfgBackend.value.trim().replace(/\/$/, "");
+  saveState();
+  settingsPanel.classList.remove("open");
+});
+
+/* ============================================================
+   BACKEND CALL — shared by all three generator tabs
+   ============================================================ */
+async function callContentEndpoint(mode, input, { onWaking } = {}){
+  if(!state.backendUrl){
+    throw new Error("Set your backend URL in Settings first (⚙ top right).");
+  }
+  const url = state.backendUrl + "/content";
+
+  async function attempt(timeoutMs){
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, input }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      return res;
+    }catch(e){
+      clearTimeout(timeout);
+      throw e;
+    }
+  }
+
+  let res;
+  try{
+    res = await attempt(20000);
+  }catch(e){
+    if(onWaking) onWaking();
+    res = await attempt(60000);
+  }
+
+  if(res.status === 429){
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Rate limited — try again shortly.");
+  }
+  if(!res.ok){
+    throw new Error("Backend error " + res.status);
+  }
+  const data = await res.json();
+  return data.reply;
+}
+
+/* ============================================================
+   IDEAS TAB
+   ============================================================ */
+function wireGeneratorTab({ mode, inputEl, goBtn, spinner, resultBox, actions, copyBtn, regenBtn, buildInput }){
+  async function run(){
+    const input = buildInput();
+    if(!input){
+      showToast("Fill in the field above first");
+      return;
+    }
+    goBtn.disabled = true;
+    spinner.classList.add("show");
+    resultBox.classList.remove("show");
+    actions.style.display = "none";
+
+    try{
+      const reply = await callContentEndpoint(mode, input, {
+        onWaking: () => { resultBox.textContent = "Waking up the backend — this can take a minute…"; resultBox.classList.add("show"); }
+      });
+      resultBox.textContent = reply;
+      resultBox.classList.add("show");
+      actions.style.display = "flex";
+    }catch(e){
+      resultBox.textContent = "⚠️ " + e.message;
+      resultBox.classList.add("show");
+    }finally{
+      goBtn.disabled = false;
+      spinner.classList.remove("show");
+    }
+  }
+
+  goBtn.addEventListener("click", run);
+  regenBtn.addEventListener("click", run);
+  copyBtn.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(resultBox.textContent);
+      showToast("Copied");
+    }catch(e){ showToast("Couldn't copy"); }
+  });
+}
+
+wireGeneratorTab({
+  mode: "ideas",
+  goBtn: document.getElementById("ideasGoBtn"),
+  spinner: document.getElementById("ideasSpinner"),
+  resultBox: document.getElementById("ideasResult"),
+  actions: document.getElementById("ideasActions"),
+  copyBtn: document.getElementById("ideasCopyBtn"),
+  regenBtn: document.getElementById("ideasRegenBtn"),
+  buildInput: () => document.getElementById("ideasInput").value.trim()
+});
+
+wireGeneratorTab({
+  mode: "captions",
+  goBtn: document.getElementById("captionsGoBtn"),
+  spinner: document.getElementById("captionsSpinner"),
+  resultBox: document.getElementById("captionsResult"),
+  actions: document.getElementById("captionsActions"),
+  copyBtn: document.getElementById("captionsCopyBtn"),
+  regenBtn: document.getElementById("captionsRegenBtn"),
+  buildInput: () => {
+    const platform = document.getElementById("captionsPlatform").value;
+    const desc = document.getElementById("captionsInput").value.trim();
+    return desc ? `Platform: ${platform}\nVideo description: ${desc}` : "";
+  }
+});
+
+/* ============================================================
+   EDITING TAB — supports either a real video upload (analyzed by
+   Gemini) or a plain text description, whichever is provided.
+   ============================================================ */
+const editVideoFile = document.getElementById("editVideoFile");
+const editVideoInfo = document.getElementById("editVideoInfo");
+const MAX_UPLOAD_BYTES = 14 * 1024 * 1024; // leaves headroom under the backend's base64 limit
+let pendingVideo = null; // { base64, mimeType, name }
+
+editVideoFile.addEventListener("change", () => {
+  const file = editVideoFile.files[0];
+  editVideoInfo.style.display = "none";
+  pendingVideo = null;
+  if(!file) return;
+
+  if(file.size > MAX_UPLOAD_BYTES){
+    editVideoInfo.textContent = `That file is ${(file.size/1024/1024).toFixed(1)}MB — please trim or compress it below ~14MB and re-select.`;
+    editVideoInfo.style.color = "var(--danger)";
+    editVideoInfo.style.display = "block";
+    editVideoFile.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(",")[1];
+    pendingVideo = { base64, mimeType: file.type || "video/mp4", name: file.name };
+    editVideoInfo.style.color = "var(--gold)";
+    editVideoInfo.textContent = `Ready: ${file.name} (${(file.size/1024/1024).toFixed(1)}MB) — will be analyzed directly.`;
+    editVideoInfo.style.display = "block";
+  };
+  reader.onerror = () => {
+    editVideoInfo.style.color = "var(--danger)";
+    editVideoInfo.textContent = "Couldn't read that file — try a different one.";
+    editVideoInfo.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+});
+
+const editGoBtn = document.getElementById("editGoBtn");
+const editSpinner = document.getElementById("editSpinner");
+const editResult = document.getElementById("editResult");
+const editActions = document.getElementById("editActions");
+
+async function callAnalyzeVideo({ videoBase64, mimeType, platform, mood }, onWaking){
+  if(!state.backendUrl){
+    throw new Error("Set your backend URL in Settings first (⚙ top right).");
+  }
+  const url = state.backendUrl + "/analyze-video";
+
+  async function attempt(timeoutMs){
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoBase64, mimeType, platform, mood }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      return res;
+    }catch(e){
+      clearTimeout(timeout);
+      throw e;
+    }
+  }
+
+  let res;
+  try{
+    res = await attempt(30000); // video analysis is slower than plain text
+  }catch(e){
+    if(onWaking) onWaking();
+    res = await attempt(75000);
+  }
+
+  if(res.status === 413){
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "That clip is too large.");
+  }
+  if(res.status === 429){
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Rate limited — try again shortly.");
+  }
+  if(!res.ok){
+    throw new Error("Backend error " + res.status);
+  }
+  const data = await res.json();
+  return data.reply;
+}
+
+async function runEditingPlan(){
+  const platform = document.getElementById("editPlatform").value;
+  const mood = document.getElementById("editMood").value.trim();
+  const footageText = document.getElementById("editInput").value.trim();
+
+  if(!pendingVideo && !footageText){
+    showToast("Upload a clip or describe it first");
+    return;
+  }
+
+  editGoBtn.disabled = true;
+  editSpinner.classList.add("show");
+  editResult.classList.remove("show");
+  editActions.style.display = "none";
+
+  try{
+    let reply;
+    const onWaking = () => {
+      editResult.textContent = "Waking up the backend — this can take a minute…";
+      editResult.classList.add("show");
+    };
+
+    if(pendingVideo){
+      reply = await callAnalyzeVideo({
+        videoBase64: pendingVideo.base64,
+        mimeType: pendingVideo.mimeType,
+        platform,
+        mood
+      }, onWaking);
+    } else {
+      const input = `Platform: ${platform}\nFootage details: ${footageText}\nDesired mood/style: ${mood || "not specified"}`;
+      reply = await callContentEndpoint("editing", input, { onWaking });
+    }
+
+    editResult.textContent = reply;
+    editResult.classList.add("show");
+    editActions.style.display = "flex";
+  }catch(e){
+    editResult.textContent = "⚠️ " + e.message;
+    editResult.classList.add("show");
+  }finally{
+    editGoBtn.disabled = false;
+    editSpinner.classList.remove("show");
+  }
+}
+
+editGoBtn.addEventListener("click", runEditingPlan);
+document.getElementById("editRegenBtn").addEventListener("click", runEditingPlan);
+document.getElementById("editCopyBtn").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText(editResult.textContent); showToast("Copied"); }
+  catch(e){ showToast("Couldn't copy"); }
+});
+
+/* ============================================================
+   PLANNER TAB
+   ============================================================ */
+const planList = document.getElementById("planList");
+
+function renderPlans(){
+  planList.innerHTML = "";
+  if(state.plans.length === 0){
+    planList.innerHTML = `<div class="empty-state">Nothing scheduled yet — add your next post above.</div>`;
+    return;
+  }
+  const sorted = [...state.plans].sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+  sorted.forEach(plan => {
+    const el = document.createElement("div");
+    el.className = "plan-item";
+    const dateNice = plan.date ? new Date(plan.date + "T00:00:00").toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "";
+    el.innerHTML = `
+      <div class="info">
+        <div class="title">${escapeHtml(plan.title)}</div>
+        <div class="when">${dateNice}${plan.time ? " · " + formatTime(plan.time) : ""}</div>
+        <div class="platform">${escapeHtml(plan.platform)}</div>
+      </div>
+      <button class="del" data-id="${plan.id}">✕</button>
+    `;
+    planList.appendChild(el);
+  });
+  planList.querySelectorAll(".del").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.plans = state.plans.filter(p => p.id !== btn.dataset.id);
+      saveState();
+      renderPlans();
+    });
+  });
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+function formatTime(t){
+  const [h,m] = t.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(m).padStart(2,"0")} ${period}`;
+}
+
+document.getElementById("planAddBtn").addEventListener("click", () => {
+  const title = document.getElementById("planTitle").value.trim();
+  const platform = document.getElementById("planPlatform").value;
+  const date = document.getElementById("planDate").value;
+  const time = document.getElementById("planTime").value;
+
+  if(!title || !date){
+    showToast("Add at least a title and date");
+    return;
+  }
+
+  state.plans.push({ id: Date.now().toString(), title, platform, date, time });
+  saveState();
+  renderPlans();
+
+  document.getElementById("planTitle").value = "";
+  document.getElementById("planDate").value = "";
+  document.getElementById("planTime").value = "";
+  showToast("Added to planner");
+});
+
+renderPlans();
+</script>
+</body>
+</html>
