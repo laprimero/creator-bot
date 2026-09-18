@@ -124,6 +124,8 @@
   .settings-panel.open{ transform:translateY(0); }
   .settings-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
 </style>
+<meta name="theme-color" content="#0b0710">
+<link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -651,6 +653,13 @@ document.getElementById("planAddBtn").addEventListener("click", () => {
 });
 
 renderPlans();
+
+// Register the service worker so Chrome offers "Install app".
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* installable features just won't be offered */ });
+  });
+}
 </script>
 </body>
 </html>
