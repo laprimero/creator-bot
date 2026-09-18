@@ -342,6 +342,19 @@ async function callContentEndpoint(mode, input, { onWaking } = {}){
     const data = await res.json().catch(() => ({}));
     throw new Error(data.message || "Rate limited — try again shortly.");
   }
+
+  // A 500/502/503 is usually a brief upstream hiccup on the free tier —
+  // wait a moment and try once more before treating it as a real failure.
+  if(res.status >= 500){
+    if(onWaking) onWaking();
+    await new Promise(r => setTimeout(r, 2500));
+    res = await attempt(60000);
+    if(res.status === 429){
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || "Rate limited — try again shortly.");
+    }
+  }
+
   if(!res.ok){
     throw new Error("Backend error " + res.status);
   }
@@ -500,6 +513,18 @@ async function callAnalyzeVideo({ videoBase64, mimeType, platform, mood }, onWak
     const data = await res.json().catch(() => ({}));
     throw new Error(data.message || "Rate limited — try again shortly.");
   }
+
+  // Brief upstream hiccup — wait a moment and try once more.
+  if(res.status >= 500){
+    if(onWaking) onWaking();
+    await new Promise(r => setTimeout(r, 2500));
+    res = await attempt(75000);
+    if(res.status === 429){
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || "Rate limited — try again shortly.");
+    }
+  }
+
   if(!res.ok){
     throw new Error("Backend error " + res.status);
   }
